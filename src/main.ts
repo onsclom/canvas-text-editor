@@ -3,12 +3,25 @@
 const canvas = document.querySelector("canvas")!
 const ctx = canvas.getContext("2d")!
 
-const ANIMATION_TIME = 0.1
+const LETTER_ANIMATION_TIME = 0.3
+type AnimatedLetter = {
+  letter: string
+  time: number
+}
+
+const CURSOR_ANIMATION_TIME = 0.2
 const state = {
   text: `wow this
 supports multiple lines!
 cool...
-  wowoweeewa`.split("\n"),
+  wowoweeewa`
+    .split("\n")
+    .map((line) =>
+      line.split("").map((letter) => ({
+        letter,
+        time: 0,
+      }))
+    ),
   cursor: {
     pos: { x: 0, y: 0 },
 
@@ -54,16 +67,26 @@ requestAnimationFrame(function loop(time) {
   const delta = time - start
   start = time
 
+  state.text.forEach((line) => {
+    line.forEach((letter) => {
+      letter.time += delta / 1000
+      letter.time = Math.min(LETTER_ANIMATION_TIME, letter.time)
+    })
+  })
+
   state.cursor.visualTarget = {
     x: state.cursor.pos.x * CHAR_WIDTH,
     y: state.cursor.pos.y * CHAR_HEIGHT,
   }
   state.cursor.visualTime += delta / 1000
-  state.cursor.visualTime = Math.min(ANIMATION_TIME, state.cursor.visualTime)
+  state.cursor.visualTime = Math.min(
+    CURSOR_ANIMATION_TIME,
+    state.cursor.visualTime
+  )
   state.cursor.visualPos = lerp(
     state.cursor.visualStart,
     state.cursor.visualTarget,
-    ease(state.cursor.visualTime / ANIMATION_TIME)
+    ease(state.cursor.visualTime / CURSOR_ANIMATION_TIME)
   )
 
   // DRAW
@@ -79,10 +102,27 @@ requestAnimationFrame(function loop(time) {
   )
 
   // draw text
-  state.text.forEach((line, i) => {
-    ctx.fillStyle = "black"
-    ctx.fillText(line, 0, CHAR_HEIGHT * i)
+  ctx.save()
+  state.text.forEach((line, y) => {
+    line.forEach(({ letter, time }, x) => {
+      const animatedProgress = ease(time / LETTER_ANIMATION_TIME)
+
+      ctx.save()
+      ctx.translate(x * CHAR_WIDTH, y * CHAR_HEIGHT)
+
+      ctx.translate(
+        (CHAR_WIDTH / 2) * (1 - animatedProgress),
+        (CHAR_HEIGHT / 2) * (1 - animatedProgress)
+      )
+      ctx.scale(animatedProgress, animatedProgress)
+
+      // ctx.fillStyle = `rgba(0,0,0,${time / LETTER_ANIMATION_TIME})`
+      ctx.fillStyle = "black"
+      ctx.fillText(letter, 0, 0)
+      ctx.restore()
+    })
   })
+  ctx.restore()
 
   // DEBUG BAR
   ctx.fillStyle = "black"
@@ -134,12 +174,12 @@ window.addEventListener("keydown", (e) => {
     else if (e.key === "j") state.cursor.pos.y++
     else if (e.key === "i") state.inputMode = "INSERT"
     else if (e.key === "x") {
-      const row = state.text[state.cursor.pos.y].split("")
+      const row = state.text[state.cursor.pos.y]
       const newRow = [
         ...row.slice(0, state.cursor.pos.x),
         ...row.slice(state.cursor.pos.x + 1),
       ]
-      state.text[state.cursor.pos.y] = newRow.join("")
+      state.text[state.cursor.pos.y] = newRow
     }
 
     state.cursor.pos.y = clamp(0, state.text.length - 1, state.cursor.pos.y)
@@ -172,21 +212,24 @@ window.addEventListener("keydown", (e) => {
     } else if (e.key === "ArrowUp") state.cursor.pos.y--
     else if (e.key === "ArrowDown") state.cursor.pos.y++
     else if (e.key === "Backspace") {
-      const row = state.text[state.cursor.pos.y].split("")
+      const row = state.text[state.cursor.pos.y]
       const newRow = [
         ...row.slice(0, state.cursor.pos.x - 1),
         ...row.slice(state.cursor.pos.x),
       ]
-      state.text[state.cursor.pos.y] = newRow.join("")
+      state.text[state.cursor.pos.y] = newRow
       state.cursor.pos.x--
     } else if (e.key.length === 1) {
-      const row = state.text[state.cursor.pos.y].split("")
+      const row = state.text[state.cursor.pos.y]
       const newRow = [
         ...row.slice(0, state.cursor.pos.x),
-        e.key,
+        {
+          letter: e.key,
+          time: 0,
+        },
         ...row.slice(state.cursor.pos.x),
       ]
-      state.text[state.cursor.pos.y] = newRow.join("")
+      state.text[state.cursor.pos.y] = newRow
       state.cursor.pos.x++
     }
 
