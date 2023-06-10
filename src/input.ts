@@ -6,7 +6,25 @@ function animateCursor() {
   state.cursor.visualTime = 0
 }
 
-window.addEventListener("keydown", (e) => {
+addEventListener("mousemove", (e) => {
+  document.body.style.cursor = "text"
+  state.cursorPos = {
+    x: e.clientX - state.sizes.margin,
+    y: e.clientY - state.sizes.margin,
+  }
+})
+
+addEventListener("mousedown", (e) => {
+  if (e.button === 0) {
+    const { charHeight: CHAR_HEIGHT, charWidth: CHAR_WIDTH } = state.sizes
+    const x = Math.round(state.cursorPos.x / CHAR_WIDTH)
+    const y = Math.floor(state.cursorPos.y / CHAR_HEIGHT)
+    state.cursor.pos = { x, y }
+    animateCursor()
+  }
+})
+
+addEventListener("keydown", (e) => {
   const ogPos = { ...state.cursor.pos }
 
   switch (e.key) {

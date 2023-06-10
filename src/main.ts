@@ -31,11 +31,13 @@ export const state = {
     charWidth: 0,
     screenWidth: 0,
     screenHeight: 0,
+    margin: 10,
   },
   settings: {
     letterAnimationTime: 0.2,
     cursorAnimationTime: 0.2,
   },
+  cursorPos: { x: 0, y: 0 },
 }
 
 export type State = typeof state
@@ -67,6 +69,7 @@ function setup() {
     charWidth: CHAR_WIDTH,
     screenWidth: WIDTH,
     screenHeight: HEIGHT,
+    margin: 32,
   }
 }
 
