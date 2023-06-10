@@ -29,14 +29,28 @@ export function render(state: State, ctx: CanvasRenderingContext2D) {
       ctx.save()
       ctx.translate(x * CHAR_WIDTH, y * CHAR_HEIGHT)
 
-      ctx.translate(
-        (CHAR_WIDTH / 2) * (1 - animatedProgress),
-        (CHAR_HEIGHT / 2) * (1 - animatedProgress)
-      )
-      ctx.scale(animatedProgress, animatedProgress)
+      type AnimationStyle = "scale-in" | "drop-in"
+      const animationStyle = "drop-in" as AnimationStyle
 
-      // ctx.fillStyle = `rgba(0,0,0,${time / LETTER_ANIMATION_TIME})`
-      ctx.fillStyle = "black"
+      switch (animationStyle) {
+        case "scale-in": {
+          ctx.translate(
+            (CHAR_WIDTH / 2) * (1 - animatedProgress),
+            (CHAR_HEIGHT / 2) * (1 - animatedProgress)
+          )
+          ctx.scale(animatedProgress, animatedProgress)
+          ctx.fillStyle = "black"
+          break
+        }
+        case "drop-in": {
+          ctx.translate(0, (1 - animatedProgress) * (-CHAR_HEIGHT / 2))
+          ctx.fillStyle = `rgba(0,0,0,${
+            time / state.settings.letterAnimationTime
+          })`
+          break
+        }
+      }
+
       ctx.fillText(letter, 0, 0)
       ctx.restore()
     })

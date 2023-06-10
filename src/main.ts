@@ -28,7 +28,7 @@ export const state = {
     screenHeight: 0,
   },
   settings: {
-    letterAnimationTime: 0.2,
+    letterAnimationTime: 0.3,
     cursorAnimationTime: 0.2,
   },
 }
