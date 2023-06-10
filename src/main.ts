@@ -8,10 +8,15 @@ cool...
   wowoweeewa`
 
 export const state = {
-  text: DEFAULT_TEXT.split("\n").map((line) =>
-    line.split("").map((letter) => ({
+  text: DEFAULT_TEXT.split("\n").map((line, y) =>
+    line.split("").map((letter, x) => ({
       letter,
       time: 0,
+
+      visualStart: { x, y },
+      visualEnd: { x, y },
+      visualCur: { x, y },
+      translateTime: 0,
     }))
   ),
   cursor: {
@@ -28,7 +33,7 @@ export const state = {
     screenHeight: 0,
   },
   settings: {
-    letterAnimationTime: 0.3,
+    letterAnimationTime: 0.2,
     cursorAnimationTime: 0.2,
   },
 }

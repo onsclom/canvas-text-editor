@@ -22,11 +22,12 @@ export function render(state: State, ctx: CanvasRenderingContext2D) {
 
   // draw text
   ctx.save()
-  state.text.forEach((line, y) => {
-    line.forEach(({ letter, time }, x) => {
+  state.text.forEach((line) => {
+    line.forEach(({ letter, time, visualCur: curPos }) => {
       const animatedProgress = ease(time / state.settings.letterAnimationTime)
 
       ctx.save()
+      const { x, y } = curPos
       ctx.translate(x * CHAR_WIDTH, y * CHAR_HEIGHT)
 
       type AnimationStyle = "scale-in" | "drop-in"

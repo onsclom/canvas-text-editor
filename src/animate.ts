@@ -7,6 +7,17 @@ export function animate(state: State, delta: number) {
     line.forEach((letter) => {
       letter.time += delta / 1000
       letter.time = Math.min(state.settings.letterAnimationTime, letter.time)
+
+      letter.translateTime += delta / 1000
+      letter.translateTime = Math.min(
+        state.settings.letterAnimationTime,
+        letter.translateTime
+      )
+      letter.visualCur = lerp(
+        letter.visualStart,
+        letter.visualEnd,
+        ease(letter.translateTime / state.settings.letterAnimationTime)
+      )
     })
   })
   state.cursor.visualTarget = {
