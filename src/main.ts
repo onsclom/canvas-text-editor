@@ -7,18 +7,24 @@ supports multiple lines!
 cool...
   wowoweeewa`
 
+type DeletedLetter = {
+  letter: string
+  time: number
+  pos: Vec2
+}
+
 export const state = {
   text: DEFAULT_TEXT.split("\n").map((line, y) =>
     line.split("").map((letter, x) => ({
       letter,
       time: 0,
-
       visualStart: { x, y },
       visualEnd: { x, y },
       visualCur: { x, y },
       translateTime: 0,
     }))
   ),
+  letterGraveyard: [] as DeletedLetter[],
   cursor: {
     pos: { x: 0, y: 0 },
     visualPos: { x: 0, y: 0 },

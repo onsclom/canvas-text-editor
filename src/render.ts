@@ -29,14 +29,11 @@ export function render(state: State, ctx: CanvasRenderingContext2D) {
     state.text.forEach((line) => {
       line.forEach(({ letter, time, visualCur: curPos }) => {
         const animatedProgress = ease(time / state.settings.letterAnimationTime)
-
         ctx.save()
         const { x, y } = curPos
         ctx.translate(x * CHAR_WIDTH, y * CHAR_HEIGHT)
-
         type AnimationStyle = "scale-in" | "drop-in"
         const animationStyle = "drop-in" as AnimationStyle
-
         switch (animationStyle) {
           case "scale-in": {
             ctx.translate(
@@ -55,13 +52,28 @@ export function render(state: State, ctx: CanvasRenderingContext2D) {
             break
           }
         }
-
         ctx.fillText(letter, 0, 0)
         ctx.restore()
       })
     })
     ctx.restore()
   }
+
+  // draw graveyard text
+  state.letterGraveyard.forEach(({ letter, time, pos }) => {
+    const animatedProgress = ease(time / state.settings.letterAnimationTime)
+    ctx.save()
+    ctx.translate(
+      state.sizes.margin + pos.x * CHAR_WIDTH,
+      state.sizes.margin + pos.y * CHAR_HEIGHT
+    )
+    ctx.translate(0, animatedProgress * (-CHAR_HEIGHT / 2))
+    ctx.fillStyle = `rgba(0,0,0,${
+      1 - time / state.settings.letterAnimationTime
+    })`
+    ctx.fillText(letter, 0, 0)
+    ctx.restore()
+  })
 
   // DEBUG BAR
   ctx.fillStyle = "black"

@@ -1,8 +1,10 @@
 import { State } from "./main"
-import { ease, lerp } from "./utils"
+import { clamp, ease, lerp } from "./utils"
 
 export function animate(state: State, delta: number) {
   const { charHeight: CHAR_HEIGHT, charWidth: CHAR_WIDTH } = state.sizes
+  // TODO: make more generic way to add animations
+  // maybe just timers for example?
   state.text.forEach((line) => {
     line.forEach((letter) => {
       letter.time += delta / 1000
@@ -33,5 +35,14 @@ export function animate(state: State, delta: number) {
     state.cursor.visualStart,
     state.cursor.visualTarget,
     ease(state.cursor.visualTime / state.settings.cursorAnimationTime)
+  )
+
+  state.letterGraveyard.forEach((letter) => {
+    letter.time += delta / 1000
+    letter.time = Math.min(state.settings.letterAnimationTime, letter.time)
+  })
+  // remove letters that are too old
+  state.letterGraveyard = state.letterGraveyard.filter(
+    (letter) => letter.time < state.settings.letterAnimationTime
   )
 }

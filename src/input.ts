@@ -67,6 +67,15 @@ addEventListener("keydown", (e) => {
           state.cursor.pos.y--
         }
       } else {
+        const letterAtSpot = row[state.cursor.pos.x - 1]
+        if (letterAtSpot) {
+          // add to graveyard
+          state.letterGraveyard.push({
+            pos: { x: state.cursor.pos.x - 1, y: state.cursor.pos.y },
+            letter: letterAtSpot.letter,
+            time: 0,
+          })
+        }
         const newRow = [
           ...row.slice(0, state.cursor.pos.x - 1),
           ...row.slice(state.cursor.pos.x),
