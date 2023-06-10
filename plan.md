@@ -21,8 +21,18 @@ how to get there?
   - automatic word wrapping
     - not sure how to handle this best yet
     - also margin and center the document nicely
+  - vertical scrolling for long text
 - fun stuff
   - add sound on typing
   - add effects on deleting letters!
   - markdown syntax highlighting
     - should animate color changing
+    
+challenges:
+  - really hard to support mobile
+    - probably will just choose not to
+  - performance
+    - im developing on an m1 mac, so
+    i probably wont notice performance
+    problems right away
+    - i should do performance profiling
