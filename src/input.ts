@@ -1,15 +1,10 @@
 import { state } from "./main"
 import { clamp } from "./utils"
 
-function animateCursor() {
-  state.cursor.visualStart = { ...state.cursor.visualPos }
-  state.cursor.visualTime = 0
-}
-
 addEventListener("mousemove", (e) => {
   document.body.style.cursor = "text"
   state.cursorPos = {
-    x: e.clientX - state.sizes.margin,
+    x: e.clientX - state.sizes.leftMargin,
     y: e.clientY - state.sizes.margin,
   }
 })
@@ -20,120 +15,87 @@ addEventListener("mousedown", (e) => {
     const x = Math.round(state.cursorPos.x / CHAR_WIDTH)
     const y = Math.floor(state.cursorPos.y / CHAR_HEIGHT)
     state.cursor.pos = { x, y }
-    animateCursor()
+    forceValidCursorPos(textTo2dArray(state.text))
   }
 })
 
 addEventListener("keydown", (e) => {
-  const ogPos = { ...state.cursor.pos }
-
+  const lines = textTo2dArray(state.text)
   switch (e.key) {
     case "ArrowRight": {
-      state.cursor.pos.x++
-      if (state.cursor.pos.x > state.text[state.cursor.pos.y].length) {
-        if (state.cursor.pos.y !== state.text.length - 1) {
-          state.cursor.pos.x = 0
-          state.cursor.pos.y++
-        }
+      state.cursor.pos.x = state.cursor.pos.x + 1
+      if (lineLength(lines[state.cursor.pos.y]) < state.cursor.pos.x) {
+        state.cursor.pos.y = state.cursor.pos.y + 1
+        state.cursor.pos.x = 0
       }
       break
     }
     case "ArrowLeft": {
-      state.cursor.pos.x--
+      state.cursor.pos.x = state.cursor.pos.x - 1
       if (state.cursor.pos.x < 0) {
-        if (state.cursor.pos.y !== 0) {
-          state.cursor.pos.y--
-          state.cursor.pos.x = state.text[state.cursor.pos.y].length
-        }
+        state.cursor.pos.y -= 1
+        state.cursor.pos.x = lineLength(lines[state.cursor.pos.y])
       }
       break
     }
     case "ArrowUp": {
-      state.cursor.pos.y--
+      state.cursor.pos.y = state.cursor.pos.y - 1
       break
     }
     case "ArrowDown": {
-      state.cursor.pos.y++
+      state.cursor.pos.y = state.cursor.pos.y + 1
       break
     }
     case "Backspace": {
-      const row = state.text[state.cursor.pos.y]
       if (state.cursor.pos.x === 0) {
-        if (state.cursor.pos.y !== 0) {
-          const newRow = [...state.text[state.cursor.pos.y - 1], ...row]
-          state.cursor.pos.x = state.text[state.cursor.pos.y - 1].length
-          state.text[state.cursor.pos.y - 1] = newRow
-          state.text.splice(state.cursor.pos.y, 1)
-          state.cursor.pos.y--
-        }
-      } else {
-        const letterAtSpot = row[state.cursor.pos.x - 1]
-        if (letterAtSpot) {
-          // add to graveyard
-          state.letterGraveyard.push({
-            pos: { x: state.cursor.pos.x - 1, y: state.cursor.pos.y },
-            letter: letterAtSpot.letter,
-            time: 0,
-          })
-        }
-        const newRow = [
-          ...row.slice(0, state.cursor.pos.x - 1),
-          ...row.slice(state.cursor.pos.x),
-        ]
-        state.text[state.cursor.pos.y] = newRow
-        state.cursor.pos.x--
+        state.cursor.pos.y -= 1
+        state.cursor.pos.x = lines[state.cursor.pos.y]?.length
       }
+      const charAtCursor = lines[state.cursor.pos.y]?.[state.cursor.pos.x - 1]
+      if (charAtCursor) {
+        state.text.splice(state.text.indexOf(charAtCursor), 1)
+        state.letterGraveyard.push({
+          letter: charAtCursor.letter,
+          time: 0,
+          pos: { ...charAtCursor.pos },
+        })
+      }
+      state.cursor.pos.x = state.cursor.pos.x - 1
       break
     }
     case "Enter": {
-      const row = state.text[state.cursor.pos.y]
-      const newRow = [...row.slice(state.cursor.pos.x)]
-      state.text[state.cursor.pos.y] = row.slice(0, state.cursor.pos.x)
-      state.text.splice(state.cursor.pos.y + 1, 0, newRow)
-      state.cursor.pos.y++
-      state.cursor.pos.x = 0
+      // handle adding \n
       break
     }
     default: {
-      if (e.key.length === 1) {
-        const row = state.text[state.cursor.pos.y]
-        const newRow = [
-          ...row.slice(0, state.cursor.pos.x),
-          {
-            letter: e.key,
-            time: 0,
-            textPos: { x: state.cursor.pos.x, y: state.cursor.pos.y },
-            visualStart: { x: state.cursor.pos.x, y: state.cursor.pos.y },
-            visualEnd: { x: state.cursor.pos.x, y: state.cursor.pos.y },
-            visualCur: { x: state.cursor.pos.x, y: state.cursor.pos.y },
-            translateTime: 0,
-          },
-          ...row.slice(state.cursor.pos.x),
-        ]
-        state.text[state.cursor.pos.y] = newRow
-        state.cursor.pos.x++
-      }
+      // handle letter adding
       break
     }
   }
+  forceValidCursorPos(lines)
+})
 
-  state.cursor.pos.y = clamp(0, state.text.length - 1, state.cursor.pos.y)
+// HELPER FUNCTIONS //
+
+function textTo2dArray(text: typeof state.text) {
+  const lines = [] as (typeof state.text)[]
+  text.forEach((textChar) => {
+    while (lines[textChar.pos.y] === undefined)
+      lines[textChar.pos.y] = [] as typeof state.text
+    lines[textChar.pos.y].push(textChar)
+  })
+  return lines
+}
+
+function lineLength(line: typeof state.text) {
+  return line[line.length - 1]?.letter === "\n" ? line.length - 1 : line.length
+}
+
+function forceValidCursorPos(lines: (typeof state.text)[]) {
+  state.cursor.pos.y = clamp(0, lines.length, state.cursor.pos.y)
   state.cursor.pos.x = clamp(
     0,
-    state.text[state.cursor.pos.y].length,
+    lines[state.cursor.pos.y] ? lineLength(lines[state.cursor.pos.y]) : 0,
     state.cursor.pos.x
   )
-  if (state.cursor.pos.x > state.text[state.cursor.pos.y].length)
-    state.cursor.pos.x = state.text[state.cursor.pos.y].length
-
-  if (ogPos.x !== state.cursor.pos.x || ogPos.y !== state.cursor.pos.y)
-    animateCursor()
-
-  state.text.forEach((line, y) => {
-    line.forEach((letter, x) => {
-      letter.visualStart = letter.visualCur
-      letter.visualEnd = { x, y }
-      letter.translateTime = 0
-    })
-  })
-})
+}
