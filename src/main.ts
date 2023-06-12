@@ -51,6 +51,11 @@ export type State = typeof state
 const canvas = document.querySelector("canvas")!
 const ctx = canvas.getContext("2d")!
 
+// load custom font for canvas
+new FontFace("inteloneMonoFont", "url(/intelone-mono-font-family-regular.woff)")
+  .load()
+  .then((font) => document.fonts.add(font))
+
 function setup() {
   const dpi = window.devicePixelRatio
   const canvasComputedWidth = parseInt(
@@ -66,7 +71,7 @@ function setup() {
   const WIDTH = canvasComputedWidth
   const HEIGHT = canvasComputedHeight
   const CHAR_HEIGHT = 32
-  ctx.font = `${CHAR_HEIGHT}px monospace`
+  ctx.font = `${CHAR_HEIGHT}px inteloneMonoFont`
   ctx.textAlign = "left"
   ctx.textBaseline = "top"
   const CHAR_WIDTH = ctx.measureText(" ").width
