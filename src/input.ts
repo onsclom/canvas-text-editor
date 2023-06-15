@@ -1,5 +1,6 @@
 import { state } from "./main"
-import { clamp } from "./utils"
+import { clamp, wordWrap } from "./utils"
+import { TextChar } from "./main"
 
 addEventListener("mousemove", (e) => {
   document.body.style.cursor = "text"
@@ -15,16 +16,18 @@ addEventListener("mousedown", (e) => {
     const x = Math.round(state.cursorPos.x / CHAR_WIDTH)
     const y = Math.floor(state.cursorPos.y / CHAR_HEIGHT)
     state.cursor.pos = { x, y }
-    forceValidCursorPos(textTo2dArray(state.text))
+    forceValidCursorPos()
   }
 })
 
 addEventListener("keydown", (e) => {
-  const lines = textTo2dArray(state.text)
   switch (e.key) {
     case "ArrowRight": {
       state.cursor.pos.x = state.cursor.pos.x + 1
-      if (lineLength(lines[state.cursor.pos.y]) < state.cursor.pos.x) {
+      if (
+        lineLength(state.text[state.cursor.pos.y]) < state.cursor.pos.x &&
+        state.text.length - 1 !== state.cursor.pos.y
+      ) {
         state.cursor.pos.y = state.cursor.pos.y + 1
         state.cursor.pos.x = 0
       }
@@ -34,7 +37,7 @@ addEventListener("keydown", (e) => {
       state.cursor.pos.x = state.cursor.pos.x - 1
       if (state.cursor.pos.x < 0) {
         state.cursor.pos.y -= 1
-        state.cursor.pos.x = lineLength(lines[state.cursor.pos.y])
+        state.cursor.pos.x = lineLength(state.text[state.cursor.pos.y])
       }
       break
     }
@@ -43,59 +46,91 @@ addEventListener("keydown", (e) => {
       break
     }
     case "ArrowDown": {
-      state.cursor.pos.y = state.cursor.pos.y + 1
+      if (state.text.length - 1 === state.cursor.pos.y)
+        state.cursor.pos.x = state.text[state.cursor.pos.y].length
+      else state.cursor.pos.y = state.cursor.pos.y + 1
       break
     }
+    // TODO: make less hacky
     case "Backspace": {
-      if (state.cursor.pos.x === 0) {
-        state.cursor.pos.y -= 1
-        state.cursor.pos.x = lines[state.cursor.pos.y]?.length
-      }
-      const charAtCursor = lines[state.cursor.pos.y]?.[state.cursor.pos.x - 1]
-      if (charAtCursor) {
-        state.text.splice(state.text.indexOf(charAtCursor), 1)
+      if (state.cursor.pos.x === 0 && state.cursor.pos.y === 0) break
+      else if (state.cursor.pos.x === 0) {
+        const removed = state.text[state.cursor.pos.y - 1].pop()!
         state.letterGraveyard.push({
-          letter: charAtCursor.letter,
+          letter: removed.letter,
           time: 0,
-          pos: { ...charAtCursor.pos },
+          pos: removed.pos,
         })
+        state.cursor.pos.y -= 1
+        state.cursor.pos.x = lineLength(state.text[state.cursor.pos.y])
+      } else {
+        const removed = state.text[state.cursor.pos.y].splice(
+          state.cursor.pos.x - 1,
+          1
+        )[0]
+        state.letterGraveyard.push({
+          letter: removed.letter,
+          time: 0,
+          pos: removed.pos,
+        })
+        state.cursor.pos.x -= 1
       }
-      state.cursor.pos.x = state.cursor.pos.x - 1
       break
     }
     case "Enter": {
       // handle adding \n
+      state.text[state.cursor.pos.y].splice(
+        state.cursor.pos.x,
+        0,
+        textChar("\n", {
+          ...state.cursor.pos,
+        })
+      )
+      wordWrap()
+
+      state.cursor.pos.y += 1
+      state.cursor.pos.x = 0
       break
     }
     default: {
-      // handle letter adding
+      if (e.key.length !== 1) break // special cases
+      const newChar = textChar(e.key, {
+        x: state.cursor.pos.x,
+        y: state.cursor.pos.y,
+      })
+      state.text[state.cursor.pos.y].splice(state.cursor.pos.x, 0, newChar)
+      state.cursor.onChar = newChar
+      state.cursor.pos.x += 1
       break
     }
   }
-  forceValidCursorPos(lines)
+  forceValidCursorPos()
+  wordWrap() // word wrap in case necessary
 })
 
 // HELPER FUNCTIONS //
 
-function textTo2dArray(text: typeof state.text) {
-  const lines = [] as (typeof state.text)[]
-  text.forEach((textChar) => {
-    while (lines[textChar.pos.y] === undefined)
-      lines[textChar.pos.y] = [] as typeof state.text
-    lines[textChar.pos.y].push(textChar)
-  })
-  return lines
+function textChar(char: string, pos: Vec2): TextChar {
+  return {
+    letter: char,
+    pos: { ...pos },
+    visualCur: { ...pos },
+    visualStart: { ...pos },
+    translateTime: 0,
+    time: 0,
+  }
 }
 
-function lineLength(line: typeof state.text) {
+function lineLength(line: TextChar[]) {
+  if (!line) return 0
   return line[line.length - 1]?.letter === "\n" ? line.length - 1 : line.length
 }
 
-function forceValidCursorPos(lines: (typeof state.text)[]) {
-  state.cursor.pos.y = clamp(0, lines.length, state.cursor.pos.y)
+function forceValidCursorPos() {
+  state.cursor.pos.y = clamp(0, state.text.length - 1, state.cursor.pos.y)
   state.cursor.pos.x = clamp(
     0,
-    lines[state.cursor.pos.y] ? lineLength(lines[state.cursor.pos.y]) : 0,
+    [state.cursor.pos.y] ? lineLength(state.text[state.cursor.pos.y]) : 0,
     state.cursor.pos.x
   )
 }

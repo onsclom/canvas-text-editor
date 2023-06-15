@@ -1,16 +1,30 @@
 import { render } from "./render"
 import { animate } from "./animate"
 import "./input"
+import { wordWrap } from "./utils"
 
-const DEFAULT_TEXT = `wow this
-supports multiple lines! i need longer lines ok what about an omega long line. this should definitely be wrapped
-cool...
-  wowoweeewa`
+const DEFAULT_TEXT = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed porta blandit mi non rutrum. Aliquam malesuada, sapien a faucibus lacinia, diam leo ornare nisi, a convallis diam ex ut lectus. Donec vulputate faucibus euismod. Nullam efficitur finibus enim sed consectetur. Vestibulum neque dui, bibendum sit amet mattis ac, tincidunt vel orci. Cras pellentesque tincidunt risus id ultrices. Suspendisse non euismod ex.
+
+Nunc rutrum semper mi, vitae luctus purus pharetra id. Donec nisi quam, bibendum tempor euismod bibendum, vulputate maximus lorem. Aliquam ac odio nisl. Vivamus cursus ultricies dui in feugiat. Sed pharetra tellus purus, id eleifend tortor pharetra vel. Sed laoreet vel magna non rutrum. Ut lobortis, leo eget vestibulum accumsan, diam neque pharetra elit, ut volutpat est enim at urna. Sed dignissim mi at augue elementum vulputate. Mauris enim massa, tincidunt sit amet congue ut, venenatis ut arcu. Fusce feugiat est urna. Donec finibus commodo magna quis convallis. Praesent vitae eros id tortor finibus semper eu id nisl. Suspendisse ullamcorper enim mollis magna maximus, vel pellentesque nisl vehicula.\n`
+// this needs to always end with newline!
 
 const MAX_CHARS_PER_LINE = 55 // optimal line length for reading based on google
 
-function textCharsFromText(text: string) {
-  return text.split("").map((letter) => ({
+function textChar(letter: string, pos: Vec2) {
+  return {
+    letter,
+    time: 0,
+    visualStart: { x: 0, y: 0 },
+    pos,
+    visualCur: { x: 0, y: 0 },
+    translateTime: 0,
+  }
+}
+
+export type TextChar = ReturnType<typeof textChar>
+
+function textCharsFromString(text: string) {
+  const chars = text.split("").map((letter) => ({
     letter,
     time: 0,
     visualStart: { x: 0, y: 0 },
@@ -18,6 +32,7 @@ function textCharsFromText(text: string) {
     visualCur: { x: 0, y: 0 },
     translateTime: 0,
   }))
+  return [chars] as TextChar[][]
 }
 
 type DeletedLetter = {
@@ -27,7 +42,7 @@ type DeletedLetter = {
 }
 
 export const state = {
-  text: textCharsFromText(DEFAULT_TEXT),
+  text: textCharsFromString(DEFAULT_TEXT),
   letterGraveyard: [] as DeletedLetter[],
   cursor: {
     pos: { x: 0, y: 0 },
@@ -36,6 +51,7 @@ export const state = {
     visualTime: 0,
     visualStart: { x: 0, y: 0 },
     visualTarget: { x: 0, y: 0 },
+    onChar: null as TextChar | null,
   },
   sizes: {
     charHeight: 0,

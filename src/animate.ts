@@ -1,24 +1,26 @@
 import { State } from "./main"
-import { clamp, ease, lerp } from "./utils"
+import { clamp, ease, lerp, vec2Equals } from "./utils"
 
 export function animate(state: State, delta: number) {
   const { charHeight: CHAR_HEIGHT, charWidth: CHAR_WIDTH } = state.sizes
   // TODO: make more generic way to add animations
   // maybe just timers for example?
-  state.text.forEach((letter) => {
-    letter.time += delta / 1000
-    letter.time = Math.min(state.settings.letterAnimationTime, letter.time)
+  state.text.forEach((row) => {
+    row.forEach((letter) => {
+      letter.time += delta / 1000
+      letter.time = Math.min(state.settings.letterAnimationTime, letter.time)
 
-    letter.translateTime += delta / 1000
-    letter.translateTime = Math.min(
-      state.settings.letterAnimationTime,
-      letter.translateTime
-    )
-    letter.visualCur = lerp(
-      letter.visualStart,
-      letter.pos,
-      ease(letter.translateTime / state.settings.letterAnimationTime)
-    )
+      letter.translateTime += delta / 1000
+      letter.translateTime = Math.min(
+        state.settings.letterAnimationTime,
+        letter.translateTime
+      )
+      letter.visualCur = lerp(
+        letter.visualStart,
+        letter.pos,
+        ease(letter.translateTime / state.settings.letterAnimationTime)
+      )
+    })
   })
 
   // animate cursor
@@ -51,51 +53,4 @@ export function animate(state: State, delta: number) {
   state.letterGraveyard = state.letterGraveyard.filter(
     (letter) => letter.time < state.settings.letterAnimationTime
   )
-
-  // wrap chars
-  // not worrying about word wrapping or tabs yet
-  const charsPerRow = state.sizes.charsPerRow
-  let line = 0
-  let row = 0
-  let lastCharWasNewline = false
-  const cursorAttachedTo = {
-    x: state.cursor.pos.x - 1,
-    y: state.cursor.pos.y,
-  }
-  state.text.forEach((textChar) => {
-    if (lastCharWasNewline) {
-      lastCharWasNewline = false
-      row = 0
-      line++
-    }
-
-    if (textChar.letter === "\n") {
-      lastCharWasNewline = true
-    } else if (row >= charsPerRow) {
-      row = 0
-      line++
-    }
-
-    const newPos = {
-      x: row,
-      y: line,
-    }
-    if (!vec2Equals(textChar.pos, newPos)) {
-      // if cursor right after this char, move it to the new position too
-      if (vec2Equals(cursorAttachedTo, textChar.pos)) {
-        state.cursor.pos = {
-          x: newPos.x + 1,
-          y: newPos.y,
-        }
-      }
-      textChar.visualStart = textChar.visualCur
-      textChar.pos = newPos
-      textChar.translateTime = 0
-    }
-    row++
-  })
-}
-
-function vec2Equals(a: Vec2, b: Vec2) {
-  return a.x === b.x && a.y === b.y
 }
