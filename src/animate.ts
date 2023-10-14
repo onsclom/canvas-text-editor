@@ -1,5 +1,5 @@
 import { State } from "./main"
-import { clamp, ease, lerp, vec2Equals } from "./utils"
+import { ease, lerp, vec2Equals } from "./utils"
 
 export function animate(state: State, delta: number) {
   const { charHeight: CHAR_HEIGHT, charWidth: CHAR_WIDTH } = state.sizes

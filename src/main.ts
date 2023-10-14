@@ -1,7 +1,6 @@
 import { render } from "./render"
 import { animate } from "./animate"
 import "./input"
-import { wordWrap } from "./utils"
 
 const DEFAULT_TEXT = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed porta blandit mi non rutrum. Aliquam malesuada, sapien a faucibus lacinia, diam leo ornare nisi, a convallis diam ex ut lectus. Donec vulputate faucibus euismod. Nullam efficitur finibus enim sed consectetur. Vestibulum neque dui, bibendum sit amet mattis ac, tincidunt vel orci. Cras pellentesque tincidunt risus id ultrices. Suspendisse non euismod ex.
 
